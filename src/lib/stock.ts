@@ -83,13 +83,32 @@ export async function getStockQuote(symbol: string): Promise<StockQuote | null> 
   }
 }
 
-// Type guard for news array
-function hasNewsArray(obj: unknown): obj is { news: unknown[] } {
+// Type guard for news array - Fixed and simplified
+function hasNewsArray(obj: unknown): obj is { news: Array<Record<string, unknown>> } {
   return (
     typeof obj === 'object' &&
     obj !== null &&
     'news' in obj &&
     Array.isArray((obj as any).news)
+  );
+}
+
+// Type guard for insights result
+function hasInsightsResult(obj: unknown): obj is { 
+  finance: { 
+    result: Array<{ 
+      reports?: Array<Record<string, unknown>> 
+    }> 
+  } 
+} {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'finance' in obj &&
+    typeof (obj as any).finance === 'object' &&
+    (obj as any).finance !== null &&
+    'result' in (obj as any).finance &&
+    Array.isArray((obj as any).finance.result)
   );
 }
 
@@ -124,17 +143,18 @@ export async function getStockNews(symbol: string): Promise<NewsItem[]> {
       const insights = await yahooFinance.insights(symbol);
       console.log('Insights result:', insights);
       
-      if (insights && typeof insights === 'object' && 'finance' in insights && insights.finance && typeof insights.finance === 'object' && 'result' in insights.finance && Array.isArray(insights.finance.result)) {
+      if (hasInsightsResult(insights)) {
         const reports = insights.finance.result[0]?.reports || [];
         if (reports.length > 0) {
-          return reports.slice(0, 10).map((item: unknown) => ({
-            title: (item as Record<string, unknown>).title as string || 'Market Insight',
-            summary: (item as Record<string, unknown>).summary as string || (item as Record<string, unknown>).title as string || 'Market analysis and insights',
-            publishedAt: (item as Record<string, unknown>).publishedOn 
-              ? new Date((item as Record<string, unknown>).publishedOn as string).toISOString()
-              : new Date().toISOString(),
-            url: (item as Record<string, unknown>).url as string || '#',
-            source: (item as Record<string, unknown>).provider as string || 'Yahoo Finance'
+          return reports.slice(0, 10).map((item: Record<string, unknown>) => ({
+            title: (typeof item.title === 'string' ? item.title : 'Market Insight'),
+            summary: (typeof item.summary === 'string' ? item.summary : 
+                     typeof item.title === 'string' ? item.title : 'Market analysis and insights'),
+            publishedAt: (typeof item.publishedOn === 'string' 
+              ? new Date(item.publishedOn).toISOString()
+              : new Date().toISOString()),
+            url: (typeof item.url === 'string' ? item.url : '#'),
+            source: (typeof item.provider === 'string' ? item.provider : 'Yahoo Finance')
           }));
         }
       }
@@ -142,16 +162,17 @@ export async function getStockNews(symbol: string): Promise<NewsItem[]> {
       console.log('Insights failed:', e);
     }
 
-    // Process search results if available - FIXED HERE
+    // Process search results if available - FIXED
     if (hasNewsArray(newsData) && newsData.news.length > 0) {
-      return newsData.news.map((item: unknown) => ({
-        title: (item as Record<string, unknown>).title as string || 'No title available',
-        summary: (item as Record<string, unknown>).summary as string || (item as Record<string, unknown>).title as string || 'No summary available',
-        publishedAt: (item as Record<string, unknown>).providerPublishTime 
-          ? new Date(((item as Record<string, unknown>).providerPublishTime as number) * 1000).toISOString()
-          : new Date().toISOString(),
-        url: (item as Record<string, unknown>).link as string || '#',
-        source: (item as Record<string, unknown>).publisher as string || 'Unknown'
+      return newsData.news.map((item: Record<string, unknown>) => ({
+        title: (typeof item.title === 'string' ? item.title : 'No title available'),
+        summary: (typeof item.summary === 'string' ? item.summary : 
+                 typeof item.title === 'string' ? item.title : 'No summary available'),
+        publishedAt: (typeof item.providerPublishTime === 'number' 
+          ? new Date(item.providerPublishTime * 1000).toISOString()
+          : new Date().toISOString()),
+        url: (typeof item.link === 'string' ? item.link : '#'),
+        source: (typeof item.publisher === 'string' ? item.publisher : 'Unknown')
       }));
     }
 
