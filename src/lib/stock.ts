@@ -86,7 +86,7 @@ export async function getStockQuote(symbol: string): Promise<StockQuote | null> 
 export async function getStockNews(symbol: string): Promise<NewsItem[]> {
   try {
     // Try multiple approaches to get news
-    let newsData: any = null;
+    let newsData: unknown = null;
     
     // Method 1: Try quoteSummary with news module
     try {
@@ -114,17 +114,17 @@ export async function getStockNews(symbol: string): Promise<NewsItem[]> {
       const insights = await yahooFinance.insights(symbol);
       console.log('Insights result:', insights);
       
-      if (insights && insights.finance && insights.finance.result) {
+      if (insights && typeof insights === 'object' && 'finance' in insights && insights.finance && typeof insights.finance === 'object' && 'result' in insights.finance && Array.isArray(insights.finance.result)) {
         const reports = insights.finance.result[0]?.reports || [];
         if (reports.length > 0) {
-          return reports.slice(0, 10).map((item: any) => ({
-            title: item.title || 'Market Insight',
-            summary: item.summary || item.title || 'Market analysis and insights',
-            publishedAt: item.publishedOn 
-              ? new Date(item.publishedOn).toISOString()
+          return reports.slice(0, 10).map((item: unknown) => ({
+            title: (item as Record<string, unknown>).title as string || 'Market Insight',
+            summary: (item as Record<string, unknown>).summary as string || (item as Record<string, unknown>).title as string || 'Market analysis and insights',
+            publishedAt: (item as Record<string, unknown>).publishedOn 
+              ? new Date((item as Record<string, unknown>).publishedOn as string).toISOString()
               : new Date().toISOString(),
-            url: item.url || '#',
-            source: item.provider || 'Yahoo Finance'
+            url: (item as Record<string, unknown>).url as string || '#',
+            source: (item as Record<string, unknown>).provider as string || 'Yahoo Finance'
           }));
         }
       }
@@ -133,15 +133,15 @@ export async function getStockNews(symbol: string): Promise<NewsItem[]> {
     }
 
     // Process search results if available
-    if (newsData && newsData.news && newsData.news.length > 0) {
-      return newsData.news.map((item: any) => ({
-        title: item.title || 'No title available',
-        summary: item.summary || item.title || 'No summary available',
-        publishedAt: item.providerPublishTime 
-          ? new Date(item.providerPublishTime * 1000).toISOString()
+    if (newsData && typeof newsData === 'object' && newsData !== null && 'news' in newsData && Array.isArray((newsData as Record<string, unknown>).news) && (newsData as Record<string, unknown>).news.length > 0) {
+      return ((newsData as Record<string, unknown>).news as unknown[]).map((item: unknown) => ({
+        title: (item as Record<string, unknown>).title as string || 'No title available',
+        summary: (item as Record<string, unknown>).summary as string || (item as Record<string, unknown>).title as string || 'No summary available',
+        publishedAt: (item as Record<string, unknown>).providerPublishTime 
+          ? new Date(((item as Record<string, unknown>).providerPublishTime as number) * 1000).toISOString()
           : new Date().toISOString(),
-        url: item.link || '#',
-        source: item.publisher || 'Unknown'
+        url: (item as Record<string, unknown>).link as string || '#',
+        source: (item as Record<string, unknown>).publisher as string || 'Unknown'
       }));
     }
 
@@ -185,7 +185,7 @@ function generateFallbackNews(symbol: string): NewsItem[] {
   ];
 }
 
-export async function getHistoricalData(symbol: string, period: string = '6mo'): Promise<HistoricalPrice[]> {
+export async function getHistoricalData(symbol: string): Promise<HistoricalPrice[]> {
   try {
     const queryOptions = {
       period1: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000), // 6 months ago
@@ -215,8 +215,6 @@ export function calculateTechnicalAnalysis(historicalData: HistoricalPrice[], cu
   }
 
   const closePrices = historicalData.map(d => d.close);
-  const highPrices = historicalData.map(d => d.high);
-  const lowPrices = historicalData.map(d => d.low);
 
   try {
     // Calculate RSI (14-period)
