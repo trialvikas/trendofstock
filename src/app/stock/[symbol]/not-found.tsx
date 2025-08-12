@@ -10,12 +10,12 @@ export default function NotFound() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Stock Not Found</CardTitle>
             <CardDescription>
-              The stock symbol you're looking for doesn't exist or couldn't be found.
+              The stock symbol you&apos;re looking for doesn&apos;t exist or couldn&apos;t be found.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              Please check the stock symbol and try again. Make sure it's a valid ticker symbol.
+              Please check the stock symbol and try again. Make sure it&apos;s a valid ticker symbol.
             </p>
             <Link href="/">
               <Button className="w-full">
