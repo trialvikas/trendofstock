@@ -83,7 +83,7 @@ export async function getStockQuote(symbol: string): Promise<StockQuote | null> 
   }
 }
 
-// --- TYPE GUARD ADDED HERE ---
+// Type guard for news array
 function hasNewsArray(obj: unknown): obj is { news: unknown[] } {
   return (
     typeof obj === 'object' &&
@@ -142,7 +142,7 @@ export async function getStockNews(symbol: string): Promise<NewsItem[]> {
       console.log('Insights failed:', e);
     }
 
-    // --- FIXED TYPE GUARD USAGE HERE ---
+    // Process search results if available - FIXED HERE
     if (hasNewsArray(newsData) && newsData.news.length > 0) {
       return newsData.news.map((item: unknown) => ({
         title: (item as Record<string, unknown>).title as string || 'No title available',
