@@ -83,6 +83,16 @@ export async function getStockQuote(symbol: string): Promise<StockQuote | null> 
   }
 }
 
+// --- TYPE GUARD ADDED HERE ---
+function hasNewsArray(obj: unknown): obj is { news: unknown[] } {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'news' in obj &&
+    Array.isArray((obj as any).news)
+  );
+}
+
 export async function getStockNews(symbol: string): Promise<NewsItem[]> {
   try {
     // Try multiple approaches to get news
@@ -132,9 +142,9 @@ export async function getStockNews(symbol: string): Promise<NewsItem[]> {
       console.log('Insights failed:', e);
     }
 
-    // Process search results if available
-    if (newsData && typeof newsData === 'object' && newsData !== null && 'news' in newsData && Array.isArray((newsData as Record<string, unknown>).news) && (newsData as Record<string, unknown>).news.length > 0) {
-      return ((newsData as Record<string, unknown>).news as unknown[]).map((item: unknown) => ({
+    // --- FIXED TYPE GUARD USAGE HERE ---
+    if (hasNewsArray(newsData) && newsData.news.length > 0) {
+      return newsData.news.map((item: unknown) => ({
         title: (item as Record<string, unknown>).title as string || 'No title available',
         summary: (item as Record<string, unknown>).summary as string || (item as Record<string, unknown>).title as string || 'No summary available',
         publishedAt: (item as Record<string, unknown>).providerPublishTime 
