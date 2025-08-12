@@ -89,7 +89,7 @@ function hasNewsArray(obj: unknown): obj is { news: Array<Record<string, unknown
     typeof obj === 'object' &&
     obj !== null &&
     'news' in obj &&
-    Array.isArray((obj as any).news)
+    Array.isArray((obj as Record<string, unknown>).news)
   );
 }
 
@@ -101,15 +101,19 @@ function hasInsightsResult(obj: unknown): obj is {
     }> 
   } 
 } {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'finance' in obj &&
-    typeof (obj as any).finance === 'object' &&
-    (obj as any).finance !== null &&
-    'result' in (obj as any).finance &&
-    Array.isArray((obj as any).finance.result)
-  );
+  if (typeof obj !== 'object' || obj === null || !('finance' in obj)) {
+    return false;
+  }
+  
+  const objWithFinance = obj as Record<string, unknown>;
+  const finance = objWithFinance.finance;
+  
+  if (typeof finance !== 'object' || finance === null || !('result' in finance)) {
+    return false;
+  }
+  
+  const financeWithResult = finance as Record<string, unknown>;
+  return Array.isArray(financeWithResult.result);
 }
 
 export async function getStockNews(symbol: string): Promise<NewsItem[]> {
